@@ -8,7 +8,8 @@ import (
 
 func main() {
 	ConnectToRMQ()
-	preHandlerMessage, _ := chann.Consume("a", // queue
+
+	preHandlerMessage, err := ch.Consume("a", // queue
 		"",    // consumer
 		false, // auto-ack
 		false, // exclusive
@@ -16,17 +17,19 @@ func main() {
 		false, // no-wait
 		nil,   // args
 	)
+
+	if err != nil {
+		fmt.Errorf("%w", err)
+	}
+
 	go startHttp()
-	for {
-		select {
-		case msg := <-preHandlerMessage:
-			fmt.Println("Received a message: ", string(msg.Body))
-			msg.Ack(false)
-		}
+
+	for msg := range preHandlerMessage {
+		fmt.Println("Received a message: ", string(msg.Body))
+		msg.Ack(false)
 	}
 }
 
 func startHttp() {
 	http.ListenAndServe(":19000", nil)
-
 }

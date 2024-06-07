@@ -15,7 +15,7 @@ const (
 )
 
 var conn *amqp.Connection
-var chann *amqp.Channel
+var ch *amqp.Channel
 
 func hasError(err error, msg string) {
 	if err != nil {
@@ -29,8 +29,18 @@ func ConnectToRMQ() (err error) {
 		return errors.New("Error de conexion: " + err.Error())
 	}
 
-	chann, err = conn.Channel()
-	chann.Qos(1, 0, false)
+	ch, err = conn.Channel()
+	if err != nil {
+		return errors.New("Error al abrir canal: " + err.Error())
+	}
+
+	q, err := ch.QueueDeclare("a", true, false, false, false, nil)
+	if err != nil {
+		return errors.New("Error al abrir canal: " + err.Error())
+	}
+	_ = q
+
+	ch.Qos(1, 0, false)
 	if err != nil {
 		return errors.New("Error al abrir canal: " + err.Error())
 	}
@@ -56,8 +66,8 @@ func observeConnection() {
 
 // Can be also implemented in graceful shutdowns
 func closeActiveConnections() {
-	if !chann.IsClosed() {
-		if err := chann.Close(); err != nil {
+	if !ch.IsClosed() {
+		if err := ch.Close(); err != nil {
 			log.Println(err.Error())
 		}
 	}
@@ -71,7 +81,7 @@ func closeActiveConnections() {
 
 // SendMessage - message without response
 func SendMessage(body string) {
-	err := chann.Publish(
+	err := ch.Publish(
 		"",    // exchange
 		"",    // routing key
 		false, // mandatory

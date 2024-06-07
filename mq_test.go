@@ -8,24 +8,19 @@ import (
 )
 
 func TestPushMsg(t *testing.T) {
-
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer func(conn *amqp.Connection) {
-		err := conn.Close()
-		if err != nil {
-		}
+		conn.Close()
 	}(conn)
 
 	ch, err := conn.Channel()
 	failOnError(err, "Failed to open a channel")
 	defer func(ch *amqp.Channel) {
-		err := ch.Close()
-		if err != nil {
-		}
+		ch.Close()
 	}(ch)
 
-	for true {
+	for {
 		err = ch.PublishWithContext(context.Background(), "", "a", // routing key
 			false, // mandatory
 			false, // immediate
@@ -35,7 +30,6 @@ func TestPushMsg(t *testing.T) {
 			})
 		failOnError(err, "Failed to publish a message")
 	}
-
 }
 
 func failOnError(err error, msg string) {
